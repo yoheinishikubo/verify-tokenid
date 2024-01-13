@@ -2,6 +2,7 @@ export async function verifyTokenId(
   token: string,
   issuer: string,
   audience: string,
+  publicKeys?: Record<string, string>,
 ) {
   if (typeof crypto === 'undefined' || !crypto.subtle) {
     return {
@@ -11,6 +12,6 @@ export async function verifyTokenId(
     };
   } else {
     const { verifyTokenIdWorker } = await import('./verifier.js');
-    return await verifyTokenIdWorker(token, issuer, audience);
+    return await verifyTokenIdWorker(token, issuer, audience, publicKeys);
   }
 }

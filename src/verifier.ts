@@ -37,6 +37,7 @@ export async function verifyTokenIdWorker(
   token: string,
   issuer: string,
   audience: string,
+  publicKeys?: Record<string, string>,
 ) {
   let isValid = false;
   let error = null;
@@ -45,16 +46,24 @@ export async function verifyTokenIdWorker(
   try {
     const header = decodeProtectedHeader(token);
 
-    const data = await fetch(
-      'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com',
-    );
-    const publicKeys = await data.json();
-    let secret = publicKeys[header.kid];
+    let secret;
+
+    if (publicKeys){
+      const data = await fetch(
+        'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com',
+      );
+      const publicKeys = await data.json();
+       secret = publicKeys[header.kid];
+    } else {
+      secret = publicKeys[header.kid];
+    }
+
     const ecPublicKey = await importX509(secret, header.alg);
     let { protectedHeader, payload } = await jwtVerify(token, ecPublicKey, {
       issuer,
       audience,
     });
+    
     isValid = true;
     decoded = {
       header: JSON.parse(JSON.stringify(protectedHeader)),
